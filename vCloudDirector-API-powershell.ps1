@@ -90,15 +90,51 @@ Function Get-vCDRequest{
 # Body is either XML or JSON file
 # Type  either XML or JSON depending on the file you will be uploading
 
-Function Put-vCDRequest($EndPoint,$Body,$Type){
+Function Put-vCDRequest{
+    Param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateScript({
+            If ($_ -match "^api|^cloudapi"){
+                $True
+            }
+            else {
+                Throw "Please make sure to include /api or /cloudapi with your endpoint"
+            }
+        })]
+        [Alias("ep")]
+        [string]$Endpoint,
+        [Parameter(Mandatory=$true, position=1)]
+        [ValidateSet("xml","json")]
+        [String]$Type,
+        [Parameter(Mandatory=$true, position=2)]
+        $Body
+    )
     $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
     $Global:Type = "application/$Type"
     $GLobal:Body = [IO.FILE]::ReadAllText($Body)
     $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-    $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+    [xml]$Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
     Return $Response
 }
-Function Post-vCDRequest($EndPoint,$Body,$Type){
+Function Post-vCDRequest{
+    Param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [ValidateScript({
+            If ($_ -match "^api|^cloudapi"){
+                $True
+            }
+            else {
+                Throw "Please make sure to include /api or /cloudapi with your endpoint"
+            }
+        })]
+        [Alias("ep")]
+        [string]$Endpoint,
+        [Parameter(Mandatory=$true, position=1)]
+        [ValidateSet("xml","json")]
+        [string]$Type,
+        [Parameter(Mandatory=$true, position=2)]
+        $Body
+    )
     $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
     $Global:Type = "application/$Type"
     $GLobal:Body = [IO.FILE]::ReadAllText($Body)
