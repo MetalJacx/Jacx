@@ -66,7 +66,7 @@ Function Get-vCDRequest{
                 $True
             }
             else {
-                Throw "Please make sure to include /api or /cloudapi with your endpoint"
+                Throw "Please make sure to include api/ or cloudapi/ with your endpoint"
             }
         })]
         [Alias("ep")]
@@ -94,17 +94,17 @@ Function Put-vCDRequest{
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
-            If ($_ -match "^api|^cloudapi"){
+            If ($_ -match "^api|^cloudapi|^transfer"){
                 $True
             }
             else {
-                Throw "Please make sure to include /api or /cloudapi with your endpoint"
+                Throw "Please make sure to include api/, transfer/, or cloudapi/ with your endpoint"
             }
         })]
         [Alias("ep")]
         [string]$Endpoint,
         [Parameter(Mandatory=$true, position=1)]
-        [ValidateSet("xml","json")]
+        [ValidateSet("xml","json","binary")]
         [String]$Type,
         [Parameter(Mandatory=$true, position=2)]
         $Body
@@ -113,7 +113,7 @@ Function Put-vCDRequest{
     $Global:Type = "application/$Type"
     $GLobal:Body = [IO.FILE]::ReadAllText($Body)
     $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-    [xml]$Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+    $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
     Return $Response
 }
 Function Post-vCDRequest{
@@ -130,9 +130,9 @@ Function Post-vCDRequest{
         [Alias("ep")]
         [string]$Endpoint,
         [Parameter(Mandatory=$true, position=1)]
-        [ValidateSet("xml","json")]
+        [ValidateSet("xml","json","binary")]
         [string]$Type,
-        [Parameter(Mandatory=$true, position=2)]
+        [Parameter(Mandatory=$false, position=2)]
         $Body
     )
     $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
