@@ -1,0 +1,11 @@
+{
+    "pluginName": "AboutPage",
+    "vendor": "VMware",
+    "description": "An example About Page Extension",
+    "version": "1.0.0",
+    "license": "Proprietary",
+    "link": "http://www.vmware.com",
+    "tenant_scoped": true,
+    "provider_scoped": false,
+    "enabled": true
+}
