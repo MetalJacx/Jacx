@@ -28,7 +28,7 @@ Function New-vCDLogin{
         [string]$Username,
         [Parameter(Mandatory=$true, Position=2)]
         [Alias("pass")]
-        [string]$Password,
+        [securestring]$Password,
         [Parameter(Mandatory=$true, Position=3)]
         [ValidateSet("30.0","31.0")]
         [String]$apiv
@@ -91,7 +91,7 @@ Function Get-vCDRequest{
 # Body is either XML or JSON file
 # Type  either XML or JSON depending on the file you will be uploading
 
-Function Put-vCDRequest{
+Function Write-vCDRequest{
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
@@ -126,7 +126,7 @@ Function Put-vCDRequest{
         Return $Response
     }
 }
-Function Post-vCDRequest{
+Function Submit-vCDRequest{
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
