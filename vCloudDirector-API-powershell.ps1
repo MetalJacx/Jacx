@@ -46,12 +46,13 @@ Function New-vCDLogin{
     $Global:Authorization = "Basic $Base64"
     $headers = @{ "Authorization" = $Global:Authorization; "Accept" = $Global:Accept}
     $Res = Invoke-WebRequest -SkipCertificateCheck -Method Post -Headers $headers -Uri "$($Global:Uri)/api/sessions"
-    $Global:xvCloudAuthorization = $res.headers["X-VMWARE-VCLOUD-ACCESS-TOKEN"]
-
+    $Global:Bearer = $res.headers["X-VMWARE-VCLOUD-ACCESS-TOKEN"]
+    $xvcloudauthorization = $res.headers["x-vcloud-authorization"]
 
     Write-Host ...
     Write-Host Connection Accepted and Session Token Created -ForegroundColor Green
-    Write-Host key: "" -ForegroundColor Y -NoNewline; Write-Host $Global:xvCloudAuthorization
+    Write-Host Session Key: "" -ForegroundColor Y -NoNewline; Write-Host $xvcloudauthorization
+    Write-Host Bearer Key: "" -ForegroundColor Y -NoNewline; Write-Host $Global:Bearer
     }
 
 # Enpoint is the rest of the api command after Https://<IP or FQDN>
@@ -74,13 +75,13 @@ Function Get-vCDRequest{
     )
 
     If ($Endpoint -match "^cloudapi"){
-        $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
+        $Global:Bearer = "Bearer $Global:Bearer"
         $headers = @{"Accept" = "application/json;version=$Global:apiv"; "Authorization" = $Global:Bearer}
         $Response = Invoke-WebRequest -SkipCertificateCheck -Method Get -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
         Return $Response
     }
     else{
-    $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
+    $Global:Bearer = "Bearer $Global:Bearer"
     $headers = @{"Accept" = $Global:Accept; "Authorization" = $Global:Bearer}
     $Response = Invoke-WebRequest -SkipCertificateCheck -Method Get -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
     Return $Response
@@ -95,7 +96,7 @@ Function Put-vCDRequest{
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
             If ($_ -match "^api|^cloudapi|^transfer"){
-                $True
+                $true
             }
             else {
                 Throw "Please make sure to include api/, transfer/, or cloudapi/ with your endpoint"
@@ -109,12 +110,21 @@ Function Put-vCDRequest{
         [Parameter(Mandatory=$true, position=2)]
         $Body
     )
-    $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
-    $Global:Type = "application/$Type"
-    $GLobal:Body = [IO.FILE]::ReadAllText($Body)
-    $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-    $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
-    Return $Response
+    If ($Type -match "^api|^cloudapi"){
+        $Global:Bearer = "Bearer $Global:Bearer"
+        $Global:Type = "application/$Type"
+        $GLobal:Body = [IO.FILE]::ReadAllText($Body)
+        $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
+        $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        Return $Response
+    }
+    else {
+        $Global:Bearer = "Bearer $Global:Bearer"
+        $Global:Type = "application/$Type"
+        $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
+        $Response = Invoke-WebRequest -SkipCertificateCheck -Body $body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        Return $Response
+    }
 }
 Function Post-vCDRequest{
     Param(
@@ -135,7 +145,7 @@ Function Post-vCDRequest{
         [Parameter(Mandatory=$false, position=2)]
         $Body
     )
-    $Global:Bearer = "Bearer $Global:xvCloudAuthorization"
+    $Global:Bearer = "Bearer $Global:Bearer"
     $Global:Type = "application/$Type"
     $GLobal:Body = [IO.FILE]::ReadAllText($Body)
     $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
