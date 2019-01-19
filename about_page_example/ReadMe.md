@@ -16,3 +16,4 @@ An installation of vCloud Director version 9.1.0 is required to test the plugin.
 ### Build and Install ###
 Follow the directions listed in the [Seed README.md](../../vcd-plugin-seed/README.md) for building and installing.
 
+test VSC push
