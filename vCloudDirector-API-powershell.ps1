@@ -5,7 +5,7 @@
 
 Function New-vCDLogin{
     Param(
-        [Parameter(Mandatory=$true, Position=0)]
+        [Parameter(Mandatory=$true)]
         [ValidateScript({
             If ($_ -match "^https:\/\/.*"){
                 $True
@@ -15,7 +15,7 @@ Function New-vCDLogin{
             }
         })]
         [string]$Uri,
-        [Parameter(Mandatory=$true, Position=1)]
+        [Parameter(Mandatory=$true)]
         [ValidateScript({
             If ($_ -match "^.*\@.*"){
                 $True
@@ -26,26 +26,35 @@ Function New-vCDLogin{
         })]
         [Alias("user")]
         [string]$Username,
-        [Parameter(Mandatory=$true, Position=2)]
+        [Parameter(Mandatory=$true)]
         [Alias("pass")]
-        [securestring]$Password,
-        [Parameter(Mandatory=$true, Position=3)]
+        [string]$Password,
+        [Parameter(Mandatory=$true)]
         [ValidateSet("30.0","31.0")]
-        [String]$apiv
+        [String]$apiv,
+        [Parameter(Mandatory=$false)]
+        [switch]$skipcert
     ) 
     
     Write-Host Connecting to "" -ForegroundColor Green -NoNewline; Write-Host "$Uri" "" -NoNewline; Write-Host as "" -ForegroundColor Green -NoNewline; 
     Write-Host $Username "" -NoNewline; Write-Host with API version "" -ForegroundColor Green -NoNewline; Write-Host $apiv 
 
-    $Global:Accept = "application/*+xml;version=$apiv"
     $Global:Uri = $Uri
     $Global:apiv = $apiv
+    $Global:Bearer = ""
+    $ErrorActionPreference = "Stop"
+    
     $Pair = "$($Username):$($Password)"
     $Bytes = [System.Text.Encoding]::ASCII.GetBytes($Pair)
     $Base64 = [System.Convert]::ToBase64String($Bytes)
-    $Global:Authorization = "Basic $Base64"
-    $headers = @{ "Authorization" = $Global:Authorization; "Accept" = $Global:Accept}
-    $Res = Invoke-WebRequest -SkipCertificateCheck -Method Post -Headers $headers -Uri "$($Global:Uri)/api/sessions"
+    $Global:Authorization = "Basic $Base64"    
+    $headers = @{ "Authorization" = $Global:Authorization; "Accept" = "application/*+xml;version=$Global:apiv"}
+    IF ($skipcert.IsPresent){
+        $Res = Invoke-WebRequest -SkipCertificateCheck -Method Post -Headers $headers -Uri "$($Global:Uri)/api/sessions"
+    }
+    else {
+        $Res = Invoke-WebRequest -Method Post -Headers $headers -Uri "$($Global:Uri)/api/sessions"
+    }
     $Global:Bearer = $res.headers["X-VMWARE-VCLOUD-ACCESS-TOKEN"]
     $xvcloudauthorization = $res.headers["x-vcloud-authorization"]
 
