@@ -1,9 +1,26 @@
-# Username used to login into vCloud Director; Don't Forgot to @Org (Service Provider Administrator are @system)
-# Password goes with the above username
-# URI is your Https://<IP or FQDN>;; Leave off api this is due to Vmware now introducing /cloudapi/ when workign with themes
-# APIV the api version you want to use (Current:31.0 as of 1/13/2019)
-
 Function New-vCDLogin{
+     <#
+    .SYNOPSIS
+    Starts a session with vCloud Director(vCD) API's
+    .DESCRIPTION
+    This session will be used for for the following Get-* Write-* and Commit-* Delete-* commands in this Module
+    .PARAMETER Uri
+    The IP address or the FQDN of the base vCD Portal
+    .PARAMETER Username
+    The user with the correct level of access to leverage vCD, make sure to include @<organizationname>. The organization name is what follows https://domain.com/tenant/<organizationname>. Service Provider level admins will leverage @system.
+    .PARAMETER Password
+    The password associated with leveraged Username
+    .PARAMETER APIV
+    The version of API you wish to leverage with this connection
+    .PARAMETER skipcert
+    This optional parameter is used if you need to skip SSL cert verification. Not recommended for production.
+    .EXAMPLE
+    New-vCDLogin -URI http://<IP or FQDN> -Username 'user@org' -password 'userpass' -apiv '31.0' 
+    .EXAMPLE
+    New-vCDLogin -URI http://<IP or FQDN> -Username 'user@org' -password 'userpass' -apiv '31.0' -skipcert
+    .NOTES
+    APIV the api version you want to use (Current:31.0 as of 1/13/2019)
+    #>
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateScript({
@@ -34,10 +51,10 @@ Function New-vCDLogin{
         [String]$apiv,
         [Parameter(Mandatory=$false)]
         [switch]$skipcert
-    ) 
-    
+    )
+   
     Write-Host Connecting to "" -ForegroundColor Green -NoNewline; Write-Host "$Uri" "" -NoNewline; Write-Host as "" -ForegroundColor Green -NoNewline; 
-    Write-Host $Username "" -NoNewline; Write-Host with API version "" -ForegroundColor Green -NoNewline; Write-Host $apiv 
+    Write-Host $Username "" -NoNewline; Write-Host with API version "" -ForegroundColor Green -NoNewline; Write-Host $apiv
 
     $Global:Uri = $Uri
     $Global:apiv = $apiv
@@ -47,8 +64,9 @@ Function New-vCDLogin{
     $Pair = "$($Username):$($Password)"
     $Bytes = [System.Text.Encoding]::ASCII.GetBytes($Pair)
     $Base64 = [System.Convert]::ToBase64String($Bytes)
-    $Global:Authorization = "Basic $Base64"    
-    $headers = @{ "Authorization" = $Global:Authorization; "Accept" = "application/*+xml;version=$Global:apiv"}
+    $Authorization = "Basic $Base64"    
+    $headers = @{ "Authorization" = $Authorization; "Accept" = "application/*+xml;version=$Global:apiv"}
+    $Password = ""
     IF ($skipcert.IsPresent){
         $Res = Invoke-WebRequest -SkipCertificateCheck -Method Post -Headers $headers -Uri "$($Global:Uri)/api/sessions"
     }
