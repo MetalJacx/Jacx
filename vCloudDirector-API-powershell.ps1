@@ -83,10 +83,6 @@ Function New-vCDLogin{
     Write-Host Bearer Key: "" -ForegroundColor Y -NoNewline; Write-Host $Global:Bearer
     }
 
-# Enpoint is the rest of the api command after Https://<IP or FQDN>
-# Example One: -endpoint "api/org"
-# Example Two: -endpoint "cloudapi/branding"
-
 Function Invoke-vcd{
     IF ($global:skipcert -match "True"){
         Invoke-WebRequest -SkipCertificateCheck -Method $method -Headers $headers -body $body -Uri "$($Global:Uri)/$EndPoint"
@@ -97,6 +93,22 @@ Function Invoke-vcd{
 }
 
 Function Get-vCDRequest{
+    <#
+    .SYNOPSIS
+    Uses the define session to invoke GETs from vCloud Director(vCD) API's
+    .DESCRIPTION
+    Ths command will run get command against your supplied endpoint
+    .PARAMETER Endpoint
+    This is your define target for the API calls that is place after the URI if writing out the full command
+    .EXAMPLE
+    Stand API (XML)
+    Get-vCDRequest -endpoint api/org
+    .EXAMPLE
+    New CloudApi (JSON)
+    Get-vCDRequest -endpoint cloudapi/branding
+    .NOTES
+    Enpoint is the rest of the api command after Https://<IP or FQDN>
+    #>
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
@@ -148,20 +160,27 @@ Function Write-vCDRequest{
         [Parameter(Mandatory=$true, position=2)]
         $Body
     )
+    $method = "Put"
+
     If ($Type -match "^api|^cloudapi"){
         $Global:Bearer = "Bearer $Global:Bearer"
         $Global:Type = "application/$Type"
-        $GLobal:Body = [IO.FILE]::ReadAllText($Body)
+        $Body = [IO.FILE]::ReadAllText($Body)
         $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-        $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        $Response = Invoke-vcd
         Return $Response
     }
     else {
         $Global:Bearer = "Bearer $Global:Bearer"
         $Global:Type = "application/$Type"
         $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-        $Response = Invoke-WebRequest -SkipCertificateCheck -Body $body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
-        Return $Response
+        IF ($global:skipcert -match "True"){
+            $Response = Invoke-WebRequest -SkipCertificateCheck -InFile $body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        }
+        else {
+            $Response = Invoke-WebRequest -InFile $body -Method Put -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        }
+            Return $Response
     }
 }
 Function Submit-vCDRequest{
@@ -183,11 +202,14 @@ Function Submit-vCDRequest{
         [Parameter(Mandatory=$false, position=2)]
         $Body
     )
+
+    $method = "Post"
+
     $Global:Bearer = "Bearer $Global:Bearer"
     $Global:Type = "application/$Type"
-    $GLobal:Body = [IO.FILE]::ReadAllText($Body)
+    $Body = [IO.FILE]::ReadAllText($Body)
     $headers = @{"Authorization" = $Global:Bearer; "Content-Type" = $Global:Type}
-    $Response = Invoke-WebRequest -SkipCertificateCheck -Body $Global:body -Method Post -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+    $Response = Invoke-vcd
     Return $Response
 }
 
