@@ -58,6 +58,7 @@ Function New-vCDLogin{
 
     $Global:Uri = $Uri
     $Global:apiv = $apiv
+    $Global:skipcert = If ($skipcert.IsPresent){$true} else{$false}
     $Global:Bearer = ""
     $ErrorActionPreference = "Stop"
     
@@ -86,6 +87,15 @@ Function New-vCDLogin{
 # Example One: -endpoint "api/org"
 # Example Two: -endpoint "cloudapi/branding"
 
+Function Invoke-vcd{
+    IF ($global:skipcert -match "True"){
+        Invoke-WebRequest -SkipCertificateCheck -Method $method -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+    }
+    else {
+        Invoke-WebRequest -Method $method -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+    }
+}
+
 Function Get-vCDRequest{
     Param(
         [Parameter(Mandatory=$true, Position=0)]
@@ -100,17 +110,18 @@ Function Get-vCDRequest{
         [Alias("ep")]
         [string]$Endpoint
     )
+    $method = "get"
 
     If ($Endpoint -match "^cloudapi"){
         $Global:Bearer = "Bearer $Global:Bearer"
         $headers = @{"Accept" = "application/json;version=$Global:apiv"; "Authorization" = $Global:Bearer}
-        $Response = Invoke-WebRequest -SkipCertificateCheck -Method Get -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        $Response = Invoke-vcd
         Return $Response
     }
     else{
-    $Global:Bearer = "Bearer $Global:Bearer"
-    $headers = @{"Accept" = $Global:Accept; "Authorization" = $Global:Bearer}
-    $Response = Invoke-WebRequest -SkipCertificateCheck -Method Get -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        $Global:Bearer = "Bearer $Global:Bearer"
+        $headers = @{"Accept" = "application/*+xml;version=$Global:apiv"; "Authorization" = $Global:Bearer}
+        $Response = Invoke-vcd
     Return $Response
     }
 }
