@@ -89,10 +89,10 @@ Function New-vCDLogin{
 
 Function Invoke-vcd{
     IF ($global:skipcert -match "True"){
-        Invoke-WebRequest -SkipCertificateCheck -Method $method -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        Invoke-WebRequest -SkipCertificateCheck -Method $method -Headers $headers -body $body -Uri "$($Global:Uri)/$EndPoint"
     }
     else {
-        Invoke-WebRequest -Method $method -Headers $headers -Uri "$($Global:Uri)/$EndPoint"
+        Invoke-WebRequest -Method $method -Headers $headers -body $body -Uri "$($Global:Uri)/$EndPoint"
     }
 }
 
