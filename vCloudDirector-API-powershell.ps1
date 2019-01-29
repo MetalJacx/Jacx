@@ -58,24 +58,23 @@ Function New-vCDLogin{
         [Parameter(Mandatory=$false)]
         [switch]$skipcert
     )
-   
-    Write-Host Connecting to "" -ForegroundColor Green -NoNewline; Write-Host "$Uri" "" -NoNewline; Write-Host as "" -ForegroundColor Green -NoNewline; 
-    Write-Host $Username "" -NoNewline; Write-Host with API version "" -ForegroundColor Green -NoNewline; Write-Host $apiv
-
+       
     $Global:Uri = $Uri
     $Global:skipcert = If ($skipcert.IsPresent){$true} else{$false}
     $Global:Bearer = ""
     $ErrorActionPreference = "Stop"
     
-    If (!$Username -And !$Password -And !$apiv) {
+    If (!$Username -And !$Password -And !$apiv -And !$Path) {
+        Throw "Please include path to JSON or leverage Username/Password/Api parameters "
+    }
+    elseIf (!$Username -And !$Password -And !$apiv) {
         $login = Get-Content -Raw -Path $path | ConvertFrom-Json
         $Username = "$($login.username)@$($login.organization)"
         $Password = "$($login.password)"
         $apiv = "$($login.api)"          
     }
-    elseif (!$Username -And !$Password -And !$apiv -And !$path) {
-        Throw "Please provide path to JSON file or leverage parameter to enter login info"
-    }
+
+    Write-Verbose -message "Connecting to $Uri as $Username with API version $apiv"
 
     $Global:apiv = $apiv
     $Pair = "$($Username):$($Password)"
@@ -93,10 +92,9 @@ Function New-vCDLogin{
     $Global:Bearer = $res.headers["X-VMWARE-VCLOUD-ACCESS-TOKEN"]
     $xvcloudauthorization = $res.headers["x-vcloud-authorization"]
 
-    Write-Host ...
-    Write-Host Connection Accepted and Session Token Created -ForegroundColor Green
-    Write-Host Session Key: "" -ForegroundColor Y -NoNewline; Write-Host $xvcloudauthorization
-    Write-Host Bearer Key: "" -ForegroundColor Y -NoNewline; Write-Host $Global:Bearer
+    Write-Verbose -message "Connection Accepted and Session Token Created" 
+    Write-Verbose -message "Session Key:  $xvcloudauthorization"
+    Write-Verbose -message "Session Key:  $Global:Bearer"
     }
 
 Function Invoke-vcd{
@@ -113,7 +111,7 @@ Function Get-vCDRequest{
     .SYNOPSIS
     Uses the define session to invoke GETs from vCloud Director(vCD) API's
     .DESCRIPTION
-    Ths command will run get command against your supplied endpoint
+    Ths command will run GET command against your supplied endpoint
     .PARAMETER Endpoint
     This is your define target for the API calls that is place after the URI if writing out the full command
     .EXAMPLE
@@ -154,10 +152,31 @@ Function Get-vCDRequest{
     }
 }
 
-# Body is either XML or JSON file
-# Type  either XML or JSON depending on the file you will be uploading
-
 Function Write-vCDRequest{
+    <#
+    .SYNOPSIS
+    Uses the define session to invoke changes to vCD API Rest(Put Calls)
+    .DESCRIPTION
+    Ths command will run PUT command against your supplied endpoint
+    .PARAMETER Endpoint
+    This is your define target for the API calls that is place after the URI if writing out the full command
+    .PARAMETER Type
+    This will define your accept and content headers as either XML, JSON, or Binary
+    .PARAMETER Body
+    This is the path to the JSON, XML, or Binary file that will will be leverage for this call
+    .EXAMPLE
+    Stand API (XML)
+    Write-vCDRequest -endpoint api/<endpoint>
+    .EXAMPLE
+    New CloudApi (JSON)
+    Write-vCDRequest -endpoint cloudapi/branding/<endpoint>
+    .EXAMPLE
+    Transferring (BINARY)
+    Write-vCDRequest -endpoint transfer/<endpoint>
+    .NOTES
+    Enpoint is the rest of the api command after Https://<IP or FQDN>
+    There are times when you may need to uplaod a binary, most binary uploads will leverage transfer/<endpoint>
+    #>
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
@@ -200,6 +219,26 @@ Function Write-vCDRequest{
     }
 }
 Function Submit-vCDRequest{
+    <#
+    .SYNOPSIS
+    Uses the define session to submit new items to vCD API Rest(Put Calls)
+    .DESCRIPTION
+    Ths command will run POST command against your supplied endpoint
+    .PARAMETER Endpoint
+    This is your define target for the API calls that is place after the URI if writing out the full command
+    .PARAMETER Type
+    This will define your accept and content headers as either XML, JSON, or Binary
+    .PARAMETER Body
+    This is the path to the JSON, XML, or Binary file that will will be leverage for this call
+    .EXAMPLE
+    Stand API (XML)
+    Write-vCDRequest -endpoint api/<endpoint>
+    .EXAMPLE
+    New CloudApi (JSON)
+    Write-vCDRequest -endpoint cloudapi/branding/<endpoint>
+    .NOTES
+    Enpoint is the rest of the api command after Https://<IP or FQDN>
+        #>
     Param(
         [Parameter(Mandatory=$true, Position=0)]
         [ValidateScript({
