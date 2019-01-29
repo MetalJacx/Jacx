@@ -14,10 +14,14 @@ Function New-vCDLogin{
     The version of API you wish to leverage with this connection
     .PARAMETER skipcert
     This optional parameter is used if you need to skip SSL cert verification. Not recommended for production.
+    .PARAMETER path
+    If you don't want to keep your credentials in bash history, you can leverage this parameter to call a JSON File. You can find an example of this file on my; vCD-Login.json. This parameter does not look in the script directory so please provide the full path
     .EXAMPLE
     New-vCDLogin -URI http://<IP or FQDN> -Username 'user@org' -password 'userpass' -apiv '31.0' 
     .EXAMPLE
     New-vCDLogin -URI http://<IP or FQDN> -Username 'user@org' -password 'userpass' -apiv '31.0' -skipcert
+    .EXAMPLE
+    New-vCDLogin -URI http://<IP or FQDN> -path "/home/<user>/<filename>" or "C:/<path>/<filename>"
     .NOTES
     APIV the api version you want to use (Current:31.0 as of 1/13/2019)
     #>
@@ -32,7 +36,7 @@ Function New-vCDLogin{
             }
         })]
         [string]$Uri,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$false)]
         [ValidateScript({
             If ($_ -match "^.*\@.*"){
                 $True
@@ -43,12 +47,14 @@ Function New-vCDLogin{
         })]
         [Alias("user")]
         [string]$Username,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$false)]
         [Alias("pass")]
         [string]$Password,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$false)]
         [ValidateSet("30.0","31.0")]
         [String]$apiv,
+        [Parameter(Mandatory=$false)]
+        [String]$path,
         [Parameter(Mandatory=$false)]
         [switch]$skipcert
     )
@@ -57,11 +63,21 @@ Function New-vCDLogin{
     Write-Host $Username "" -NoNewline; Write-Host with API version "" -ForegroundColor Green -NoNewline; Write-Host $apiv
 
     $Global:Uri = $Uri
-    $Global:apiv = $apiv
     $Global:skipcert = If ($skipcert.IsPresent){$true} else{$false}
     $Global:Bearer = ""
     $ErrorActionPreference = "Stop"
     
+    If (!$Username -And !$Password -And !$apiv) {
+        $login = Get-Content -Raw -Path $path | ConvertFrom-Json
+        $Username = "$($login.username)@$($login.organization)"
+        $Password = "$($login.password)"
+        $apiv = "$($login.api)"          
+    }
+    elseif (!$Username -And !$Password -And !$apiv -And !$path) {
+        Throw "Please provide path to JSON file or leverage parameter to enter login info"
+    }
+
+    $Global:apiv = $apiv
     $Pair = "$($Username):$($Password)"
     $Bytes = [System.Text.Encoding]::ASCII.GetBytes($Pair)
     $Base64 = [System.Convert]::ToBase64String($Bytes)
