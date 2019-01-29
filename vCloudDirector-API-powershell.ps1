@@ -151,7 +151,7 @@ Function Get-vCDRequest{
     Return $Response
     }
 }
-
+Set-Alias -name Get-vCD -Value Get-vCDRequest
 Function Write-vCDRequest{
     <#
     .SYNOPSIS
@@ -218,6 +218,7 @@ Function Write-vCDRequest{
             Return $Response
     }
 }
+Set-Alias -name Put-vCD -Value Write-vCDRequest
 Function Submit-vCDRequest{
     <#
     .SYNOPSIS
@@ -267,4 +268,4 @@ Function Submit-vCDRequest{
     $Response = Invoke-vcd
     Return $Response
 }
-
+Set-Alias -name Post-vCD -Value Submit-vCDRequest
